@@ -1,0 +1,1513 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Калькулятор расчётных задач (ввод → результат)</title>
+  <style>
+    :root { --bg:#0b0f19; --card:#121a2a; --text:#e7eefc; --muted:#9fb0d0; --line:#24314d; --ok:#2ecc71; --bad:#ff5c5c; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    header { padding: 20px 16px; border-bottom:1px solid var(--line); }
+    h1 { margin:0 0 6px 0; font-size: 18px; }
+    .sub { color:var(--muted); font-size: 13px; }
+    main { padding: 16px; max-width: 1100px; margin: 0 auto; }
+    .grid { display:grid; grid-template-columns: 1fr; gap: 14px; }
+
+    .card { background: var(--card); border:1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .card h2 { margin:0 0 10px 0; font-size: 16px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; align-items:end; }
+    label { display:block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    input, select, button {
+      border-radius: 10px;
+      border:1px solid var(--line);
+      background: #0e1627;
+      color: var(--text);
+      padding: 9px 10px;
+      font-size: 14px;
+      outline: none;
+    }
+    input[type="number"] { width: 180px; }
+    select { width: 260px; }
+    button { cursor:pointer; }
+    button:hover { filter: brightness(1.07); }
+    .spacer { height: 8px; }
+    .result { margin-top: 10px; padding: 10px; border-radius: 10px; border:1px dashed var(--line); background:#0b1322; }
+    .result b { font-weight: 700; }
+    .muted { color: var(--muted); font-size: 12px; }
+    table { width:100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px; text-align:left; font-size: 13px; vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    .pill { display:inline-block; padding: 2px 8px; border:1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--muted); }
+    .actions { display:flex; gap:10px; flex-wrap:wrap; margin-top: 10px; }
+    .danger { border-color:#5b2a2a; background:#1a0f12; }
+    .danger:hover { filter: brightness(1.12); }
+    .small { font-size:12px; padding: 7px 10px; border-radius: 10px; }
+    details summary { cursor:pointer; color: var(--muted); user-select:none; }
+    details { margin-top: 8px; }
+    .two { display:grid; grid-template-columns: 1fr; gap: 10px; }
+    @media (min-width: 680px){ .two { grid-template-columns: 1fr 1fr; } }
+
+    .note { margin-top: 10px; border:1px dashed var(--line); border-radius: 10px; padding: 10px; background:#0b1322; }
+    .note h3 { margin:0 0 8px 0; font-size: 14px; }
+    .note ul { margin: 6px 0 0 18px; }
+    .note li { margin: 6px 0; }
+    code { background:#0e1627; padding: 2px 6px; border-radius: 6px; border:1px solid var(--line); }
+    .k { color: var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .hr { border-top:1px solid var(--line); margin:10px 0; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Решатель</h1>
+</header>
+
+<main class="grid">
+
+  <!-- TASK 1 -->
+  <section class="card" id="t1">
+    <h2>Задание 1 — НДС к уплате / Налог на прибыль / УСН 6%</h2>
+
+    <div class="row">
+      <div>
+        <label>Режим/вариация</label>
+        <select id="t1_mode">
+          <option value="vat">Вариация 1: НДС к уплате</option>
+          <option value="profit">Вариация 2: Налог на прибыль (доходы−расходы без НДС)</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Год (для ставки прибыли)</label>
+        <select id="t1_year">
+          <option value="2023">2023</option>
+          <option value="2024">2024</option>
+          <option value="2025" selected>2025</option>
+          <option value="2026">2026*</option>
+        </select>
+      </div>
+
+      <div>
+        <label>IT-регистрация (для прибыли)</label>
+        <select id="t1_it">
+          <option value="no" selected>Нет</option>
+          <option value="yes">Да</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Ставка налога на прибыль, % (если надо руками)</label>
+        <input id="t1_profit_rate" type="number" min="0" step="0.01" placeholder="авто по году" />
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="row">
+      <div>
+        <label>Цена ПО (руб.)</label>
+        <input id="t1_price" type="number" min="0" step="100" value="410400" />
+      </div>
+
+      <div>
+        <label>Формат цены ПО</label>
+        <select id="t1_price_type">
+          <option value="with_vat">Цена включает НДС (20%)</option>
+          <option value="without_vat">Цена без НДС (20% сверху)</option>
+        </select>
+      </div>
+
+      <div class="pill">НДС: 20%</div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="row" style="justify-content:space-between;">
+      <div class="muted">Услуги субподрядчиков (добавляй строки):</div>
+      <div class="actions">
+        <button class="small" id="t1_add">+ Добавить услугу</button>
+        <button class="small danger" id="t1_clear">Очистить услуги</button>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:220px;">Тип услуги</th>
+          <th style="width:220px;">Сумма / НДС</th>
+          <th>Комментарий</th>
+          <th style="width:90px;"></th>
+        </tr>
+      </thead>
+      <tbody id="t1_services"></tbody>
+    </table>
+
+    <div class="result">
+      <!-- VAT outputs -->
+      <div id="t1_out_vat_block">
+        <div><b>НДС с реализации:</b> <span id="t1_out_realiz">—</span></div>
+        <div><b>НДС к вычету:</b> <span id="t1_out_vichet">—</span></div>
+        <div style="margin-top:6px;"><b>НДС к уплате:</b> <span id="t1_out_pay">—</span></div>
+        <div class="muted" style="margin-top:6px;">
+          Формулы: если цена с НДС → НДС = Цена×20/120; если без НДС → НДС = Цена×0.20.
+          По услугам аналогично (кроме “не облагается/УСН” — НДС=0).
+        </div>
+      </div>
+
+      <!-- PROFIT outputs -->
+      <div id="t1_out_profit_block" style="display:none;">
+        <div><b>Доходы без НДС:</b> <span id="t1_out_revnovat">—</span></div>
+        <div><b>Расходы без НДС:</b> <span id="t1_out_expnovat">—</span></div>
+        <div style="margin-top:6px;"><b>Прибыль:</b> <span id="t1_out_profit">—</span></div>
+        <div style="margin-top:6px;"><b>Налог на прибыль:</b> <span id="t1_out_profittax">—</span></div>
+        <div class="muted" style="margin-top:6px;">
+          Доходы/расходы считаются <b>без НДС</b>. Для строки “НДС указан отдельно” считаем расход без НДС как <code>НДС/0.2</code>.
+        </div>
+      </div>
+
+      <details>
+        <summary>Подробное решение</summary>
+        <div id="t1_solution" class="note"></div>
+      </details>
+    </div>
+
+    <details>
+        <summary>Как в тексте отражаются вариации (Задание 1)</summary>
+        <div class="note">
+            <h3>Как понять, какую ветку считать</h3>
+            <ul>
+            <li><b>Вариация 1 — НДС к уплате</b>:
+                <ul>
+                <li>Вопрос формулируется как: <b>«Какую сумму НДС должно уплатить … в бюджет после продажи ПО?»</b></li>
+                <li>В тексте про цену ПО встречается: <b>«Цена … составляет … рублей включая НДС»</b> → НДС выделяем из суммы: <code>Сумма×20/120</code>.</li>
+                <li>По субподрядчикам встречаются разные форматы строк:
+                    <ul>
+                    <li><b>«… на X рублей с НДС»</b> → выделяем НДС: <code>X×20/120</code></li>
+                    <li><b>«… на X рублей без НДС»</b> → в комментарии дока подчёркнуто: <b>«НЕ 0!»</b>.
+                        Это означает, что НДС просто <b>не включили в стоимость</b> → считаем как <code>X×0.2</code>.
+                    </li>
+                    <li><b>«… на сумму, где НДС составляет Y рублей»</b> → берём НДС напрямую: <code>Y</code></li>
+                    <li><b>Исключение</b> (комментарий дока): если в задаче прямо написано
+                        <b>«услуги не облагаются НДС»</b> (например, УСН) → тогда НДС по строке = <code>0</code>.
+                    </li>
+                    </ul>
+                </li>
+                <li>Итоговая логика: <b>НДС к уплате = исходящий НДС − входной НДС (к вычету)</b>.</li>
+                </ul>
+            </li>
+
+            <li><b>Вариация 2 — налог на прибыль</b>:
+                <ul>
+                <li>Вопрос формулируется как: <b>«Какую сумму налог на прибыль должно уплатить ПАО … при отсутствии иных расходов?»</b></li>
+                <li>В тексте обычно подчёркнуто, что компания <b>официально зарегистрированная IT-компания</b> и указан год (в примере: 2025).</li>
+                <li>Доходы и расходы считаются <b>без НДС</b>:
+                    <ul>
+                    <li>Доходы без НДС: из выручки «включая НДС» выделяем НДС и вычитаем.</li>
+                    <li>Расходы по субподрядчикам тоже приводим к сумме без НДС:
+                        <ul>
+                        <li>«с НДС» → расход без НДС = сумма − (сумма×20/120)</li>
+                        <li>«без НДС» → расход без НДС = сумма</li>
+                        <li>«НДС составляет Y» → расход без НДС = <code>Y/0.2</code></li>
+                        </ul>
+                    </li>
+                    </ul>
+                </li>
+                <li>Итоговая логика: <b>Прибыль = Доходы − Расходы</b>, затем <b>Налог на прибыль = Прибыль×ставка</b>.
+                    В доке отдельно отмечено: <b>«2022–2024: 0%»</b> (для IT) и в примере считается <b>5%</b>.
+                </li>
+                </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+  </section>
+
+  <!-- TASK 2 -->
+  <section class="card" id="t2">
+    <h2>Задание 2 — PERT + 95% оценка + стоимость (без НДС)</h2>
+
+    <div class="row">
+      <div>
+        <label>Стоимость 1 чел·час (руб.)</label>
+        <input id="t2_costph" type="number" min="0" step="100" value="5400" />
+      </div>
+      <div class="pill">PERT: E=(O+4M+P)/6</div>
+      <div class="pill">СКО=(P−O)/6</div>
+      <div class="pill">95%: E95=E+2·СКОобщ</div>
+    </div>
+
+    <div class="spacer"></div>
+    <div class="two">
+      <div>
+        <div class="muted" style="margin-bottom:6px;">Требование 1</div>
+        <div class="row">
+          <div><label>O</label><input id="t2_o1" type="number" step="0.0001" value="16"></div>
+          <div><label>M</label><input id="t2_m1" type="number" step="0.0001" value="32"></div>
+          <div><label>P</label><input id="t2_p1" type="number" step="0.0001" value="64"></div>
+        </div>
+      </div>
+      <div>
+        <div class="muted" style="margin-bottom:6px;">Требование 2</div>
+        <div class="row">
+          <div><label>O</label><input id="t2_o2" type="number" step="0.0001" value="2"></div>
+          <div><label>M</label><input id="t2_m2" type="number" step="0.0001" value="6"></div>
+          <div><label>P</label><input id="t2_p2" type="number" step="0.0001" value="32"></div>
+        </div>
+      </div>
+      <div>
+        <div class="muted" style="margin-bottom:6px;">Требование 3</div>
+        <div class="row">
+          <div><label>O</label><input id="t2_o3" type="number" step="0.0001" value="2"></div>
+          <div><label>M</label><input id="t2_m3" type="number" step="0.0001" value="8"></div>
+          <div><label>P</label><input id="t2_p3" type="number" step="0.0001" value="64"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="result">
+      <div><b>E (ожидаемые трудозатраты):</b> <span id="t2_out_e">—</span> чел·час</div>
+      <div><b>СКО общая:</b> <span id="t2_out_sko">—</span></div>
+      <div><b>E95:</b> <span id="t2_out_e95">—</span> чел·час</div>
+      <div style="margin-top:6px;"><b>Стоимость (округл. до целого):</b> <span id="t2_out_cost">—</span> руб.</div>
+
+      <details>
+        <summary>Подробное решение</summary>
+        <div id="t2_solution" class="note"></div>
+      </details>
+    </div>
+    <details>
+        <summary>Как в тексте отражаются вариации (Задание 2)</summary>
+        <div class="note">
+            <h3>Что в условии может меняться</h3>
+            <ul>
+            <li>Структура одинаковая: <b>3 требования</b> (FR-*) и по каждому указаны <b>O, M, P</b>, плюс задана <b>стоимость 1 чел·часа</b>.</li>
+            <li>Вопрос формулируется как: <b>«Сколько стоит (без НДС) … если используется PERT…? Ответ округлить до целого»</b>.</li>
+            <li>Комментарий дока подчёркивает “подвох”: могут ожидать сначала <b>E95 в чел·часах</b>, а уже потом стоимость,
+                и важно держать <b>достаточно знаков после запятой</b> (особенно для СКО и E95).</li>
+            </ul>
+        </div>
+    </details>
+  </section>
+
+  <!-- TASK 3 -->
+  <section class="card" id="t3">
+    <h2>Задание 3 — Возврат обеспечительного актива + санкции</h2>
+
+    <div class="row">
+      <div>
+        <label>Сумма договора (руб.)</label>
+        <input id="t3_sum" type="number" min="0" step="100000" value="2900000" />
+      </div>
+      <div>
+        <label>Обеспечительный актив</label>
+        <select id="t3_deposit_type">
+          <option value="zadatok">Задаток</option>
+          <option value="advance">Аванс</option>
+          <option value="security">Обеспечительный платеж</option>
+        </select>
+      </div>
+      <div>
+        <label>Сумма обеспеч. актива (руб.)</label>
+        <input id="t3_deposit" type="number" min="0" step="10000" value="720000" />
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="row">
+      <div>
+        <label>Порог расторжения (дней)</label>
+        <input id="t3_threshold" type="number" min="0" step="1" value="14" />
+      </div>
+      <div>
+        <label>Фактическая просрочка (дней)</label>
+        <input id="t3_delay" type="number" min="0" step="1" value="15" />
+      </div>
+      <div class="pill" id="t3_can_term">—</div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="row">
+      <div>
+        <label>Вариант санкций</label>
+        <select id="t3_variant">
+          <option value="peni">Пени</option>
+          <option value="fine">Штраф</option>
+          <option value="both" selected>Пени + штраф</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Пени, % в день</label>
+        <input id="t3_rate" type="number" min="0" step="0.0001" value="0.4" />
+      </div>
+
+      <div>
+        <label>Лимит пени (руб.)</label>
+        <input id="t3_max_pen" type="number" min="0" step="1" value="186000" />
+      </div>
+
+      <div>
+        <label>Фикс. штраф (руб.)</label>
+        <input id="t3_fine" type="number" min="0" step="1" value="92800" />
+      </div>
+    </div>
+
+    <div class="result">
+      <div><b>Возврат обеспечительного актива:</b> <span id="t3_out_dep">—</span></div>
+      <div><b>Пени:</b> <span id="t3_out_pen">—</span></div>
+      <div><b>Штраф:</b> <span id="t3_out_fine">—</span></div>
+      <div style="margin-top:6px;"><b>Итого к возврату:</b> <span id="t3_out_total">—</span></div>
+
+      <details>
+        <summary>Подробное решение</summary>
+        <div id="t3_solution" class="note"></div>
+      </details>
+    </div>
+    <details>
+        <summary>Как в тексте отражаются вариации (Задание 3)</summary>
+        <div class="note">
+            <h3>По каким фразам распознаются правила</h3>
+            <ul>
+            <li>Ключевая фраза для удвоения: <b>«Обеспечительным активом по договору является задаток …»</b>
+                (в доке отдельно: <b>«НЕ ПУТАТЬ С ПРЕДОПЛАТОЙ»</b>).</li>
+            <li>Условие расторжения всегда задаётся как порог:
+                <b>«Договор может быть расторгнут … если просрочка … составила N и более … дней»</b>
+                и отдельно указан факт: <b>«расторгнут … на D день»</b>. Проверяем <code>D ≥ N</code>.</li>
+            <li>Санкции узнаются по формулировкам:
+                <ul>
+                <li><b>«пени R% за каждый день просрочки, но не более MAX рублей»</b> → считаем пени с лимитом.</li>
+                <li><b>«За каждый случай просрочки предусмотрен штраф F рублей»</b> → добавляем фиксированный штраф.</li>
+                </ul>
+            </li>
+            <li>Если задаток и <code>D ≥ N</code> → возвращаем <b>2× задаток</b>. Затем прибавляем пени и штраф.</li>
+            <li>Фраза <b>«Исполнитель использует УСН, … НДС не облагаются»</b> присутствует в тексте,
+                но на формулу возврата/санкций не влияет (просто уточнение про НДС).</li>
+            </ul>
+        </div>
+    </details>
+  </section>
+
+  <!-- TASK 4 -->
+  <section class="card" id="t4">
+    <h2>Задание 4 — Спринты / бэклог (все вариации)</h2>
+
+    <div class="row">
+      <div>
+        <label>Вариация</label>
+        <select id="t4_var">
+          <option value="1" selected>Вариация 1: найти количество спринтов (1 dev первые k спринтов)</option>
+          <option value="2">Вариация 2: найти начальный бэклог (первые 3 addFirst, потом addRest)</option>
+          <option value="3">Вариация 3: найти начальный бэклог (4 dev + рефакторинг)</option>
+          <option value="4">Вариация 4: найти количество спринтов (5 dev + первые k add больше)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <!-- v1 -->
+    <div id="t4_block1">
+      <div class="row">
+        <div>
+          <label>Изначальный бэклог (SP)</label>
+          <input id="t4_b0" type="number" min="0" step="0.0001" value="345" />
+        </div>
+        <div>
+          <label>Velocity на 1 dev (SP/спринт)</label>
+          <input id="t4_vdev" type="number" min="0" step="0.0001" value="29" />
+        </div>
+        <div>
+          <label>Добавляют в каждый спринт (SP)</label>
+          <input id="t4_add" type="number" min="0" step="0.0001" value="10" />
+        </div>
+        <div>
+          <label>Спринтов с 1 dev (k)</label>
+          <input id="t4_k" type="number" min="0" step="1" value="3" />
+        </div>
+        <div>
+          <label>Добавление в последний спринт?</label>
+          <select id="t4_add_last">
+            <option value="yes" selected>Да (как в доке)</option>
+            <option value="no">Нет</option>
+          </select>
+        </div>
+      </div>
+      <div class="muted" style="margin-top:8px;">
+        Если add действует каждый спринт: <span class="mono">n = (B0 + k·vdev) / (2·vdev − add)</span>, ответ <span class="mono">ceil(n)</span>.
+        Если add не действует в последний спринт: <span class="mono">n = (B0 + k·vdev − add) / (2·vdev − add)</span>, ответ <span class="mono">ceil(n)</span>.
+      </div>
+    </div>
+
+    <!-- v2 -->
+<div id="t4_block2" style="display:none;">
+  <div class="row">
+    <div>
+      <label>Всего спринтов (S)</label>
+      <input id="t4_sprints" type="number" min="0" step="1" value="9" />
+    </div>
+
+    <div>
+      <label>Velocity за спринт (V)</label>
+      <input id="t4_vspr" type="number" min="0" step="0.0001" value="80" />
+    </div>
+
+    <div>
+      <label>Сколько первых спринтов (kFirst)</label>
+      <input id="t4_k_first" type="number" min="0" step="1" value="3" />
+    </div>
+
+    <div>
+      <label>Добавляли в первые kFirst спринтов (addFirst)</label>
+      <input id="t4_add_first" type="number" min="0" step="0.0001" value="10" />
+    </div>
+
+    <div>
+      <label>Добавляли после kFirst (addRest)</label>
+      <input id="t4_add_rest" type="number" min="0" step="0.0001" value="15" />
+    </div>
+  </div>
+</div>
+
+
+    <!-- v3 -->
+    <div id="t4_block3" style="display:none;">
+      <div class="row">
+        <div>
+          <label>Разработчиков (devs)</label>
+          <input id="t4_devs3" type="number" min="1" step="1" value="4" />
+        </div>
+        <div>
+          <label>Velocity на 1 dev (SP/спринт)</label>
+          <input id="t4_vdev3" type="number" min="0" step="0.0001" value="35" />
+        </div>
+        <div>
+          <label>Спринтов (S)</label>
+          <input id="t4_s3" type="number" min="1" step="1" value="9" />
+        </div>
+        <div>
+          <label>Добавляют каждый спринт (add)</label>
+          <input id="t4_add3" type="number" min="0" step="0.0001" value="11" />
+        </div>
+        <div>
+          <label>Рефакторинг (extraCost)</label>
+          <input id="t4_extra3" type="number" min="0" step="0.0001" value="55" />
+        </div>
+        <div>
+          <label>Спринт рефакторинга (для текста)</label>
+          <input id="t4_extra_sprint3" type="number" min="1" step="1" value="5" />
+        </div>
+      </div>
+    </div>
+
+    <!-- v4 -->
+    <div id="t4_block4" style="display:none;">
+      <div class="row">
+        <div>
+          <label>Изначальный бэклог (B0)</label>
+          <input id="t4_b04" type="number" min="0" step="0.0001" value="1205" />
+        </div>
+        <div>
+          <label>Разработчиков (devs)</label>
+          <input id="t4_devs4" type="number" min="1" step="1" value="5" />
+        </div>
+        <div>
+          <label>Velocity на 1 dev (SP/спринт)</label>
+          <input id="t4_vdev4" type="number" min="0" step="0.0001" value="29" />
+        </div>
+        <div>
+          <label>Добавляют каждый спринт (addBase)</label>
+          <input id="t4_add_base4" type="number" min="0" step="0.0001" value="20" />
+        </div>
+        <div>
+          <label>+ к add в первые k (addExtra)</label>
+          <input id="t4_add_extra4" type="number" min="0" step="0.0001" value="15" />
+        </div>
+        <div>
+          <label>Сколько первых спринтов (k)</label>
+          <input id="t4_k4" type="number" min="0" step="1" value="3" />
+        </div>
+      </div>
+      <div class="muted" style="margin-top:8px;">
+        Формула: <span class="mono">B0 + ((addBase+addExtra)·k + addBase·(n−k)) = (devs·vdev)·n</span>.
+        Упрощённо: <span class="mono">n = (B0 + k·addExtra)/(devs·vdev − addBase)</span>, ответ <span class="mono">ceil(n)</span>.
+      </div>
+    </div>
+
+    <div class="result">
+      <div><b>Результат:</b> <span id="t4_out">—</span></div>
+      <details>
+        <summary>Подробное решение</summary>
+        <div id="t4_solution" class="note"></div>
+      </details>
+    </div>
+
+    <details>
+        <summary>Как в тексте отражаются вариации (Задание 4)</summary>
+        <div class="note">
+            <h3>Как понять, какая из 4 вариаций</h3>
+            <ul>
+            <li><b>Вариация 1 (найти количество спринтов)</b>:
+                <ul>
+                <li>В тексте: <b>«два разработчика … по 29 сторипоинтов каждый»</b>.</li>
+                <li>Есть фраза: <b>«в последние три недели … один … находился в отпуске»</b>
+                    (в решении дока это трактуется как 3 спринта работы одного разработчика).</li>
+                <li>Есть: <b>«владелец продукта добавляет … 10 попугаев в каждый спринт»</b>.</li>
+                <li>Вопрос: <b>«Посчитайте какое количество спринтов необходимо, если изначально бэклог … 345 …?»</b></li>
+                </ul>
+            </li>
+
+            <li><b>Вариация 2 (найти начальный бэклог)</b>:
+                <ul>
+                <li>Старт фразой: <b>«Вы разработали ПО за 9 спринтов…»</b>.</li>
+                <li>Дано: <b>«за спринт … 80 попугаев»</b>.</li>
+                <li>Уточнение: <b>«каждый спринт … добавлял по 10… После третьего … добавлялось по 15…»</b></li>
+                <li>Вопрос: <b>«Сколько попугаев было изначально…?»</b></li>
+                </ul>
+            </li>
+
+            <li><b>Вариация 3 (найти начальный бэклог, есть разовый рефакторинг)</b>:
+                <ul>
+                <li>В тексте: <b>«четыре разработчика … по 35 сторипоинта каждый»</b>.</li>
+                <li>Есть добавление: <b>«добавляет … 11 попугаев в каждый спринт»</b>.</li>
+                <li>Ключевой признак вариации: <b>«технические проблемы на 5-м спринте … рефакторинг в 55 попугаев»</b>.</li>
+                <li>Вопрос: <b>«сколько … изначально было … если проект был завершен за 9 спринтов?»</b></li>
+                </ul>
+            </li>
+
+            <li><b>Вариация 4 (найти количество спринтов, первые 3 спринта add больше)</b>:
+                <ul>
+                <li>В тексте: <b>«пять разработчика … по 29 сторипоинтов каждый»</b>.</li>
+                <li>Базовое добавление: <b>«добавляет … 20 попугаев в каждый спринт»</b>.</li>
+                <li>Ключевой признак вариации: <b>«Первые три спринта … добавил на 15 попугаев больше в каждый спринт»</b>.</li>
+                <li>Вопрос: <b>«Посчитайте какое количество спринтов необходимо, если изначально бэклог … 1205 …?»</b></li>
+                </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+  </section>
+
+  <!-- TASK 5 -->
+  <section class="card" id="t5">
+    <h2>Задание 5 — Премия “на руки” → сумма в счёт заказчику (без 0.2%, без округлений по умолчанию)</h2>
+
+    <div class="row">
+      <div>
+        <label>Год (для базы)</label>
+        <select id="t5_year">
+          <option value="2023">2023</option>
+          <option value="2024" selected>2024</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026*</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Премия на руки (net), руб.</label>
+        <input id="t5_net" type="number" min="0" step="0.0001" value="110000" />
+      </div>
+
+      <div>
+        <label>Уже выплачено в этом году, руб.</label>
+        <input id="t5_paid" type="number" min="0" step="0.0001" value="2175000" />
+      </div>
+
+      <div>
+        <label>“Уже выплачено” это</label>
+        <select id="t5_paid_type">
+          <option value="gross" selected>Начислено (gross)</option>
+          <option value="net">На руки (net)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="row">
+      <div>
+        <label>НДФЛ (по умолчанию как в доке)</label>
+        <select id="t5_ndfl_mode">
+          <option value="flat13" selected>Плоский 13% (gross = net/0.87)</option>
+          <option value="flat">Плоский % (ввести вручную)</option>
+          <option value="progressive">Прогрессивный (по шкале, инверсия через поиск)</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Плоская ставка НДФЛ, %</label>
+        <input id="t5_ndfl_flat" type="number" min="0" step="0.01" value="13" />
+      </div>
+
+      <div>
+        <label>НДС для счёта, %</label>
+        <input id="t5_vat" type="number" min="0" step="0.01" value="20" />
+      </div>
+    </div>
+
+<div class="note">
+        <div class="row">
+          <div>
+            <label>Схема взносов</label>
+            <select id="t5_contrib_scheme">
+              <option value="standard" selected>Стандарт (не IT): 30% / 15.1% (как в доке)</option>
+              <option value="it">IT-льгота (пресет из скрина, можно править)</option>
+              <option value="manual">Вручную</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Предельная база (руб.)</label>
+            <input id="t5_base_limit" type="number" min="0" step="0.0001" value="2225000" />
+          </div>
+
+          <div>
+            <label>Ставка в пределах базы, %</label>
+            <input id="t5_rate_in" type="number" min="0" step="0.0001" value="30" />
+          </div>
+
+          <div>
+            <label>Ставка сверх базы, %</label>
+            <input id="t5_rate_over" type="number" min="0" step="0.0001" value="15.1" />
+          </div>
+        </div>
+
+        <div class="muted" style="margin-top:8px;">
+          По умолчанию считаем агрегированно (30%/15.1%), без 0.2% и без разбиения на ОПС/ОМС/ВНиМ.
+        </div>
+      </div>
+
+    <div class="result">
+      <div><b>Начисленная премия (gross):</b> <span id="t5_out_gross">—</span></div>
+      <div><b>Взносы:</b> <span id="t5_out_contrib">—</span></div>
+      <div><b>Сумма для счёта без НДС:</b> <span id="t5_out_base">—</span></div>
+      <div><b>НДС (для счёта):</b> <span id="t5_out_vat">—</span></div>
+      <div style="margin-top:6px;"><b>Сумма счёта с НДС (итог):</b> <span id="t5_out_total">—</span></div>
+
+      <details>
+        <summary>Подробное решение</summary>
+        <div id="t5_solution" class="note"></div>
+      </details>
+    </div>
+    
+  <details>
+    <summary>Как в тексте отражаются вариации (Задание 5)</summary>
+    <div class="note">
+        <h3>Что меняется в условии и какие “тонкие места” прямо указаны в доке</h3>
+        <ul>
+        <li>Базовая постановка узнаётся по тексту:
+            <ul>
+            <li><b>«… премию … в размере 110000.0 рублей на руки»</b></li>
+            <li><b>«… в этом году он уже выплатил ему 2175000.0 рублей»</b></li>
+            <li>Есть уточнение: <b>«Компания не является малым предприятием»</b></li>
+            <li>И вопрос: <b>«… сколько директор должен включить в счет для заказчика…»</b></li>
+            </ul>
+        </li>
+
+        <li>В доке используются именно такие правила:
+            <ul>
+            <li>Перевод <b>net → gross</b>: <b>«… начислить … чтобы после удержания НДФЛ (13%)…»</b> → <code>gross = net / 0.87</code></li>
+            <li>Предельная база берётся как: <b>«предельной базы 2 225 000 рублей»</b> (для 2024).</li>
+            <li>Дальше деление премии на часть:
+                <ul>
+                <li><b>«Часть … в пределах базы … по ставке 30%»</b></li>
+                <li><b>«Часть … сверх базы … по ставке 15,1%»</b></li>
+                </ul>
+            </li>
+            <li>В счёт включают: <b>начисленную премию + страховые взносы</b>, потом <b>«Добавляем НДС»</b> (×1.2).</li>
+            </ul>
+        </li>
+
+        <li><b>“Ещё вариант”</b> в доке (важные отличия формулировок):
+            <ul>
+            <li><b>«НДФЛ платится в рублях без копеек»</b> → в этом варианте делается акцент на округлении НДФЛ/начисленной суммы.</li>
+            <li><b>«Взносы … в рублях и копейках»</b> → взносы считают с копейками.</li>
+            <li>Про НДС отдельно написано “тонко”:
+                <b>«НДС … платим … в рублях. Но в счет заказчику нужно включить неокруглённый НДС»</b>
+                и объяснение, почему “лучше указывать точно”.</li>
+            </ul>
+        </li>
+        </ul>
+    </div>
+  </details>
+  </section>
+</main>
+
+<script>
+  // helpers
+  // Требование: если не сказано округлять — не округляем. Выводим минимум 4 знака после запятой.
+  const ru4 = (n) => (isFinite(n) ? n.toLocaleString('ru-RU', {minimumFractionDigits: 4, maximumFractionDigits: 8}) : '—');
+  const ru0 = (n) => (isFinite(n) ? n.toLocaleString('ru-RU', {maximumFractionDigits: 0}) : '—');
+  const ruN = (n) => (isFinite(n) ? n.toLocaleString('ru-RU', {minimumFractionDigits: 4, maximumFractionDigits: 12}) : '—');
+  const num = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return NaN;
+    const v = String(el.value ?? '').trim().replace(',', '.');
+    const x = Number(v);
+    return isFinite(x) ? x : NaN;
+  };
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  // ---------------- TASK 1 ----------------
+  const t1ServicesBody = document.getElementById('t1_services');
+
+  function makeServiceRow({type='with_vat', amount=50000, comment='' } = {}) {
+    const tr = document.createElement('tr');
+
+    const tdType = document.createElement('td');
+    const sel = document.createElement('select');
+    sel.innerHTML = `
+      <option value="with_vat">С НДС (введена сумма с НДС)</option>
+      <option value="without_vat">Без НДС (введена сумма без НДС)</option>
+      <option value="vat_only">НДС указан отдельно (вводишь НДС)</option>
+      <option value="no_vat">Не облагается НДС (УСН/льгота)</option>
+    `;
+    sel.value = type;
+    tdType.appendChild(sel);
+
+    const tdAmount = document.createElement('td');
+    const inp = document.createElement('input');
+    inp.type = 'number';
+    inp.min = '0';
+    inp.step = '0.0001';
+    inp.value = amount;
+    tdAmount.appendChild(inp);
+
+    const tdComment = document.createElement('td');
+    const inpC = document.createElement('input');
+    inpC.type = 'text';
+    inpC.placeholder = 'например: АйТи-Прорыв';
+    inpC.style.width = '100%';
+    inpC.value = comment;
+    tdComment.appendChild(inpC);
+
+    const tdDel = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.className = 'small danger';
+    btn.textContent = 'Удалить';
+    btn.addEventListener('click', () => {
+      tr.remove();
+      calc1();
+    });
+    tdDel.appendChild(btn);
+
+    [sel, inp, inpC].forEach(el => el.addEventListener('input', calc1));
+    tr.append(tdType, tdAmount, tdComment, tdDel);
+    return tr;
+  }
+
+  function getServiceRows() {
+    return Array.from(t1ServicesBody.querySelectorAll('tr')).map(tr => {
+      const sel = tr.querySelector('select');
+      const inp = tr.querySelector('input[type="number"]');
+      const txt = tr.querySelector('input[type="text"]');
+      const v = String(inp.value ?? '').trim().replace(',', '.');
+      const amount = Number(v);
+      return {
+        type: sel.value,
+        amount: isFinite(amount) ? amount : 0,
+        comment: txt.value || ''
+      };
+    });
+  }
+
+  function vatFromRow(type, amount) {
+    if (!isFinite(amount)) return 0;
+    if (type === 'with_vat') return amount * 20 / 120;
+    if (type === 'without_vat') return amount * 0.20;
+    if (type === 'vat_only') return amount;
+    return 0; // no_vat
+  }
+
+  function expenseNoVatFromRow(type, amount) {
+    // Для прибыли считаем РАСХОД БЕЗ НДС:
+    // with_vat: amount - VAT
+    // without_vat: amount
+    // vat_only: VAT/0.2 (как в доке)
+    // no_vat: amount (НДС нет)
+    if (!isFinite(amount)) return 0;
+    if (type === 'with_vat') return amount - (amount * 20/120);
+    if (type === 'without_vat') return amount;
+    if (type === 'vat_only') return amount / 0.20;
+    return amount;
+  }
+
+  function revenueNoVat(price, priceType) {
+    if (!isFinite(price)) return 0;
+    if (priceType === 'with_vat') return price - (price * 20/120);
+    return price;
+  }
+
+  function resolveProfitRatePct() {
+    // Если пользователь ввёл руками — берём его
+    const manual = num('t1_profit_rate');
+    if (isFinite(manual) && String(document.getElementById('t1_profit_rate').value).trim() !== '') return manual;
+
+    const year = String(document.getElementById('t1_year').value);
+    const it = document.getElementById('t1_it').value === 'yes';
+
+    // пресеты из дока/переписки:
+    // 2022-2024: IT 0%, обычный 20%
+    // 2025+: IT 5%, обычный 25%
+    if (year === '2023' || year === '2024') return it ? 0 : 20;
+    if (year === '2025' || year === '2026') return it ? 5 : 25;
+    return it ? 5 : 25;
+  }
+
+  function applyT1UI() {
+    const mode = document.getElementById('t1_mode').value;
+    document.getElementById('t1_out_vat_block').style.display = (mode === 'vat') ? '' : 'none';
+    document.getElementById('t1_out_profit_block').style.display = (mode === 'profit') ? '' : 'none';
+  }
+
+  function calc1() {
+    applyT1UI();
+
+    const mode = document.getElementById('t1_mode').value;
+    const price = num('t1_price');
+    const priceType = document.getElementById('t1_price_type').value;
+
+    const rows = getServiceRows();
+    const perRow = rows.map((r, idx) => {
+      const v = vatFromRow(r.type, r.amount);
+      const expNoVat = expenseNoVatFromRow(r.type, r.amount);
+      let fVat = '';
+      if (r.type === 'with_vat') fVat = `${ru4(r.amount)} × 20/120`;
+      else if (r.type === 'without_vat') fVat = `${ru4(r.amount)} × 0.20`;
+      else if (r.type === 'vat_only') fVat = `${ru4(r.amount)} (НДС отдельно)`;
+      else fVat = `0 (не облагается)`;
+
+      let fExp = '';
+      if (r.type === 'with_vat') fExp = `${ru4(r.amount)} − (${ru4(r.amount)}×20/120)`;
+      else if (r.type === 'without_vat') fExp = `${ru4(r.amount)} (уже без НДС)`;
+      else if (r.type === 'vat_only') fExp = `${ru4(r.amount)} / 0.20`;
+      else fExp = `${ru4(r.amount)} (НДС нет)`;
+
+      return { idx: idx+1, ...r, vat: v, expenseNoVat: expNoVat, vatFormula: fVat, expFormula: fExp };
+    });
+
+    // ---------- VAT branch ----------
+    let ndsRealiz = 0;
+    let realizFormula = '';
+    if (isFinite(price)) {
+      if (priceType === 'with_vat') {
+        ndsRealiz = (price * 20 / 120);
+        realizFormula = `${ru4(price)} × 20/120`;
+      } else {
+        ndsRealiz = (price * 0.20);
+        realizFormula = `${ru4(price)} × 0.20`;
+      }
+    }
+    const ndsVichet = perRow.reduce((s, x) => s + x.vat, 0);
+    const ndsPay = ndsRealiz - ndsVichet;
+
+    document.getElementById('t1_out_realiz').textContent = ru4(ndsRealiz) + ' руб.';
+    document.getElementById('t1_out_vichet').textContent = ru4(ndsVichet) + ' руб.';
+    document.getElementById('t1_out_pay').textContent = ru4(ndsPay) + ' руб.';
+
+    // ---------- PROFIT branch ----------
+    const revNoVat = revenueNoVat(price, priceType);
+    const expNoVat = perRow.reduce((s, x) => s + x.expenseNoVat, 0);
+    const profit = revNoVat - expNoVat;
+
+    const profitRatePct = resolveProfitRatePct();
+    const profitTax = Math.max(0, profit) * (profitRatePct/100);
+
+    document.getElementById('t1_out_revnovat').textContent = ru4(revNoVat) + ' руб.';
+    document.getElementById('t1_out_expnovat').textContent = ru4(expNoVat) + ' руб.';
+    document.getElementById('t1_out_profit').textContent = ru4(profit) + ' руб.';
+    document.getElementById('t1_out_profittax').textContent = ru4(profitTax) + ` руб. (ставка ${ru4(profitRatePct)}%)`;
+
+    // ---------- Solution ----------
+    const sol = document.getElementById('t1_solution');
+
+    const rowsHtml = perRow.map(x => `
+      <tr>
+        <td>#${x.idx}</td>
+        <td>${esc(x.comment || '(без комментария)')}</td>
+        <td class="mono">${esc(x.type)}</td>
+        <td>${ru4(x.amount)}</td>
+        <td class="mono">${esc(x.vatFormula)}</td>
+        <td class="mono">${esc(x.expFormula)}</td>
+        <td><b>${ru4(x.vat)}</b></td>
+        <td><b>${ru4(x.expenseNoVat)}</b></td>
+      </tr>
+    `).join('');
+
+    const profitRateInfo = (() => {
+      const manualFilled = String(document.getElementById('t1_profit_rate').value || '').trim() !== '';
+      const year = String(document.getElementById('t1_year').value);
+      const it = document.getElementById('t1_it').value === 'yes';
+      return manualFilled
+        ? `ставка задана вручную`
+        : `авто по году ${esc(year)} и IT=${it ? 'да' : 'нет'}`;
+    })();
+
+    sol.innerHTML = `
+      <h3>Ветка: ${mode === 'vat' ? 'НДС' : (mode === 'profit' ? 'Налог на прибыль' : 'УСН 6%')}</h3>
+
+      <div class="hr"></div>
+
+      <h3>Исходные данные</h3>
+      <div class="muted">Цена ПО: ${ru4(price)} (${priceType === 'with_vat' ? 'включая НДС' : 'без НДС'})</div>
+
+      <div class="hr"></div>
+
+      <h3>Таблица строк субподрядчиков</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px;">Строка</th>
+            <th>Комментарий</th>
+            <th style="width:120px;">Тип</th>
+            <th style="width:120px;">Ввод</th>
+            <th>Формула НДС</th>
+            <th>Формула расхода без НДС</th>
+            <th style="width:120px;">НДС</th>
+            <th style="width:140px;">Расход без НДС</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml || `<tr><td colspan="8" class="muted">Нет строк услуг</td></tr>`}</tbody>
+      </table>
+
+      ${mode === 'vat' ? `
+        <div class="hr"></div>
+        <h3>НДС</h3>
+        <div class="mono">НДС(реализация): ${esc(realizFormula)} = <b>${ru4(ndsRealiz)}</b></div>
+        <div class="mono">НДС(вычет) = сумма НДС по строкам = <b>${ru4(ndsVichet)}</b></div>
+        <div class="mono">НДС к уплате = ${ru4(ndsRealiz)} − ${ru4(ndsVichet)} = <b>${ru4(ndsPay)}</b></div>
+      ` : ''}
+
+      ${mode === 'profit' ? `
+        <div class="hr"></div>
+        <h3>Налог на прибыль (доходы/расходы без НДС)</h3>
+        <div class="mono">Доходы без НДС = <b>${ru4(revNoVat)}</b></div>
+        <div class="mono">Расходы без НДС = <b>${ru4(expNoVat)}</b></div>
+        <div class="mono">Прибыль = ${ru4(revNoVat)} − ${ru4(expNoVat)} = <b>${ru4(profit)}</b></div>
+        <div class="muted">Ставка: ${profitRateInfo} → <b>${ru4(profitRatePct)}%</b></div>
+        <div class="mono">Налог на прибыль = max(0, прибыль) × ставка = <b>${ru4(profitTax)}</b></div>
+      ` : ''}
+    `;
+  }
+
+  document.getElementById('t1_add').addEventListener('click', () => {
+    t1ServicesBody.appendChild(makeServiceRow());
+    calc1();
+  });
+  document.getElementById('t1_clear').addEventListener('click', () => {
+    t1ServicesBody.innerHTML = '';
+    calc1();
+  });
+
+  ['t1_price','t1_price_type','t1_mode','t1_year','t1_it','t1_profit_rate']
+    .forEach(id => document.getElementById(id).addEventListener(id.includes('type') || id.includes('mode') || id.includes('year') || id.includes('it') ? 'change' : 'input', calc1));
+
+  // стартовые строки (пример из дока)
+  t1ServicesBody.appendChild(makeServiceRow({type:'with_vat', amount:51600, comment:'АйТи-Прорыв'}));
+  t1ServicesBody.appendChild(makeServiceRow({type:'with_vat', amount:44400, comment:'Оптимизировали хуже'}));
+  t1ServicesBody.appendChild(makeServiceRow({type:'without_vat', amount:70000, comment:'Клик-клак-код (без НДС ≠ 0!)'}));
+  t1ServicesBody.appendChild(makeServiceRow({type:'vat_only', amount:4200, comment:'Кэш и Соль (НДС отдельно)'}));
+
+  // ---------------- TASK 2 ----------------
+  function calc2() {
+    const costPH = num('t2_costph');
+
+    const O1 = num('t2_o1'), M1 = num('t2_m1'), P1 = num('t2_p1');
+    const O2 = num('t2_o2'), M2 = num('t2_m2'), P2 = num('t2_p2');
+    const O3 = num('t2_o3'), M3 = num('t2_m3'), P3 = num('t2_p3');
+
+    const E1 = (O1 + 4*M1 + P1)/6;
+    const E2 = (O2 + 4*M2 + P2)/6;
+    const E3 = (O3 + 4*M3 + P3)/6;
+    const E = E1 + E2 + E3;
+
+    const SKO1 = (P1 - O1)/6;
+    const SKO2 = (P2 - O2)/6;
+    const SKO3 = (P3 - O3)/6;
+    const SKO = Math.sqrt(SKO1*SKO1 + SKO2*SKO2 + SKO3*SKO3);
+
+    const E95 = E + 2*SKO;
+    const cost = costPH * E95;
+
+    document.getElementById('t2_out_e').textContent = ru4(E);
+    document.getElementById('t2_out_sko').textContent = ru4(SKO);
+    document.getElementById('t2_out_e95').textContent = ru4(E95);
+    // здесь округление требуется в условии
+    document.getElementById('t2_out_cost').textContent = ru0(Math.round(cost));
+
+    const sol = document.getElementById('t2_solution');
+    sol.innerHTML = `
+      <h3>Шаг 1. Ожидаемая оценка по PERT</h3>
+      <div class="muted">Формула: <span class="mono">E=(O+4M+P)/6</span></div>
+
+      <div class="mono">E1 = (${ruN(O1)}+4·${ruN(M1)}+${ruN(P1)})/6 = <b>${ruN(E1)}</b></div>
+      <div class="mono">E2 = (${ruN(O2)}+4·${ruN(M2)}+${ruN(P2)})/6 = <b>${ruN(E2)}</b></div>
+      <div class="mono">E3 = (${ruN(O3)}+4·${ruN(M3)}+${ruN(P3)})/6 = <b>${ruN(E3)}</b></div>
+      <div class="mono">E = E1+E2+E3 = <b>${ruN(E)}</b> чел·час</div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 2. СКО (стандартное отклонение)</h3>
+      <div class="muted">СКО=(P−O)/6, суммарно: <span class="mono">СКОобщ = √(СКО1²+СКО2²+СКО3²)</span></div>
+
+      <div class="mono">СКО1 = (${ruN(P1)}−${ruN(O1)})/6 = <b>${ruN(SKO1)}</b></div>
+      <div class="mono">СКО2 = (${ruN(P2)}−${ruN(O2)})/6 = <b>${ruN(SKO2)}</b></div>
+      <div class="mono">СКО3 = (${ruN(P3)}−${ruN(O3)})/6 = <b>${ruN(SKO3)}</b></div>
+      <div class="mono">СКОобщ = <b>${ruN(SKO)}</b></div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 3. 95% оценка и стоимость</h3>
+      <div class="mono">E95 = E + 2·СКОобщ = ${ruN(E)} + 2·${ruN(SKO)} = <b>${ruN(E95)}</b></div>
+
+      <div class="muted" style="margin-top:8px;">Стоимость (без НДС): <span class="mono">Cost = costPerHour × E95</span>, затем округление до целого</div>
+      <div class="mono">Cost = ${ruN(costPH)} × ${ruN(E95)} = ${ruN(cost)} → округл. = <b>${ru0(Math.round(cost))}</b> руб.</div>
+    `;
+  }
+  ['t2_costph','t2_o1','t2_m1','t2_p1','t2_o2','t2_m2','t2_p2','t2_o3','t2_m3','t2_p3']
+    .forEach(id => document.getElementById(id).addEventListener('input', calc2));
+
+  // ---------------- TASK 3 ----------------
+  function calc3() {
+    const sum = num('t3_sum');
+    const depType = document.getElementById('t3_deposit_type').value;
+    const dep = num('t3_deposit');
+    const thr = num('t3_threshold');
+    const delay = num('t3_delay');
+
+    const canTerminate = isFinite(delay) && isFinite(thr) ? (delay >= thr) : false;
+    document.getElementById('t3_can_term').textContent = canTerminate ? 'Можно расторгнуть' : 'Нельзя расторгнуть';
+
+    // Возврат обеспеч. актива
+    let depReturn = dep;
+    let depRule = '';
+    if (depType === 'zadatok' && canTerminate) {
+      depReturn = 2*depReturn;
+      depRule = 'задаток + можно расторгнуть → возврат 2×';
+    } else {
+      depRule = depType === 'zadatok' ? 'задаток, но нельзя расторгнуть → возврат 1×' : 'не задаток → возврат 1×';
+    }
+
+    // Санкции
+    const variant = document.getElementById('t3_variant').value;
+    const ratePct = num('t3_rate');       // % в день
+    const maxPen = num('t3_max_pen');     // руб
+    const fine = num('t3_fine');          // руб
+
+    let penRaw = 0;
+    let pen = 0;
+    let penCapped = false;
+    let outFine = 0;
+
+    if (variant === 'peni' || variant === 'both') {
+      const r = (ratePct/100);
+      penRaw = sum * r * delay;
+      pen = penRaw;
+      if (isFinite(maxPen)) {
+        if (pen > maxPen) penCapped = true;
+        pen = Math.min(pen, maxPen);
+      }
+    }
+    if (variant === 'fine' || variant === 'both') {
+      outFine = fine;
+    } else {
+      outFine = 0;
+    }
+
+    const total = depReturn + pen + outFine;
+
+    document.getElementById('t3_out_dep').textContent = ru4(depReturn) + ' руб.';
+    document.getElementById('t3_out_pen').textContent = ru4(pen) + ' руб.';
+    document.getElementById('t3_out_fine').textContent = ru4(outFine) + ' руб.';
+    document.getElementById('t3_out_total').textContent = ru4(total) + ' руб.';
+
+    // Включаем/выключаем поля по варианту
+    const rateEl = document.getElementById('t3_rate');
+    const maxEl = document.getElementById('t3_max_pen');
+    const fineEl = document.getElementById('t3_fine');
+
+    const peniOn = (variant === 'peni' || variant === 'both');
+    const fineOn = (variant === 'fine' || variant === 'both');
+
+    rateEl.disabled = !peniOn; maxEl.disabled = !peniOn;
+    fineEl.disabled = !fineOn;
+
+    // подробное решение
+    const depTypeRu = depType === 'zadatok' ? 'Задаток' : (depType === 'advance' ? 'Аванс' : 'Обеспечительный платеж');
+    const varRu = variant === 'peni' ? 'Пени' : (variant === 'fine' ? 'Штраф' : 'Пени + штраф');
+
+    const sol = document.getElementById('t3_solution');
+    const rateFrac = (ratePct/100);
+
+    sol.innerHTML = `
+      <h3>Шаг 1. Проверяем условие расторжения</h3>
+      <div class="mono">Фактическая просрочка D = ${ru0(delay)}, порог N = ${ru0(thr)}</div>
+      <div class="mono">${ru0(delay)} ≥ ${ru0(thr)} → <b>${canTerminate ? 'можно расторгнуть' : 'нельзя расторгнуть'}</b></div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 2. Возврат обеспечительного актива</h3>
+      <div class="mono">Тип: <b>${depTypeRu}</b>, сумма = ${ru4(dep)} руб.</div>
+      <div class="mono"><span class="k">(${esc(depRule)})</span> → возврат = <b>${ru4(depReturn)}</b> руб.</div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 3. Санкции</h3>
+      <div class="mono">Вариант санкций: <b>${varRu}</b></div>
+
+      <div style="margin-top:8px;">
+        <div class="muted">Пени (если включены): <span class="mono">pen = min(S × (rate/100) × days, limit)</span></div>
+        <div class="mono">
+          S=${ru4(sum)}; rate=${ruN(ratePct)}% → ${ruN(rateFrac)}; days=${ru0(delay)}
+        </div>
+        <div class="mono">
+          pen_raw = ${ru4(sum)} × ${ruN(rateFrac)} × ${ru0(delay)} = ${ru4(penRaw)}
+          ${isFinite(maxPen) ? `; limit=${ru4(maxPen)} → pen=<b>${ru4(pen)}</b>${penCapped ? ' (сработал лимит)' : ''}` : ` → pen=<b>${ru4(pen)}</b>`}
+        </div>
+      </div>
+
+      <div style="margin-top:10px;">
+        <div class="muted">Штраф (если включён): фиксированная сумма</div>
+        <div class="mono">fine = <b>${ru4(outFine)}</b> руб.</div>
+      </div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 4. Итого</h3>
+      <div class="mono">Итого = возврат + пени + штраф</div>
+      <div class="mono">${ru4(depReturn)} + ${ru4(pen)} + ${ru4(outFine)} = <b>${ru4(total)}</b> руб.</div>
+    `;
+  }
+
+  ['t3_sum','t3_deposit','t3_threshold','t3_delay','t3_rate','t3_max_pen','t3_fine']
+    .forEach(id => document.getElementById(id).addEventListener('input', calc3));
+  ['t3_deposit_type','t3_variant']
+    .forEach(id => document.getElementById(id).addEventListener('change', calc3));
+
+  // ---------------- TASK 4 ----------------
+  function applyT4UI() {
+    const v = document.getElementById('t4_var').value;
+    document.getElementById('t4_block1').style.display = (v === '1') ? '' : 'none';
+    document.getElementById('t4_block2').style.display = (v === '2') ? '' : 'none';
+    document.getElementById('t4_block3').style.display = (v === '3') ? '' : 'none';
+    document.getElementById('t4_block4').style.display = (v === '4') ? '' : 'none';
+  }
+
+  function calc4() {
+    const v = document.getElementById('t4_var').value;
+    let ans = NaN;
+    const sol = document.getElementById('t4_solution');
+
+    if (v === '1') {
+      const b0 = num('t4_b0');
+      const vdev = num('t4_vdev');
+      const add = num('t4_add');
+      const k = Math.max(0, Math.floor(num('t4_k')));
+      const addLast = document.getElementById('t4_add_last').value === 'yes';
+
+      const denom = (2*vdev - add);
+      const x = addLast
+        ? (b0 + k*vdev) / denom
+        : (b0 + k*vdev - add) / denom;
+
+      ans = Math.ceil(x);
+
+      sol.innerHTML = `
+        <h3>Вариация 1: найти количество спринтов</h3>
+        <div class="muted">
+          ${addLast
+            ? `Формула: <span class="mono">n = (B0 + k·vdev) / (2·vdev − add)</span>, ответ <span class="mono">ceil(n)</span>`
+            : `Формула: <span class="mono">n = (B0 + k·vdev − add) / (2·vdev − add)</span>, ответ <span class="mono">ceil(n)</span>`
+          }
+        </div>
+
+        <div class="mono">B0=${ruN(b0)}, vdev=${ruN(vdev)}, add=${ruN(add)}, k=${k}, addLast=${addLast ? 'yes' : 'no'}</div>
+        <div class="mono">denom = 2·${ruN(vdev)} − ${ruN(add)} = <b>${ruN(denom)}</b></div>
+        <div class="mono">n = <b>${ruN(x)}</b> → ceil(n) = <b>${ru0(ans)}</b></div>
+        ${denom <= 0 ? `<div class="muted" style="margin-top:8px;"><b>Внимание:</b> denom ≤ 0 → задача теряет смысл (бэклог не “сгорает”).</div>` : ``}
+      `;
+    }
+if (v === '2') {
+  const S = Math.max(0, Math.floor(num('t4_sprints')));
+  const V = num('t4_vspr');
+  const kFirst = Math.max(0, Math.floor(num('t4_k_first')));
+  const addFirst = num('t4_add_first');
+  const addRest = num('t4_add_rest');
+
+  const k = Math.min(kFirst, S);
+  const addedTotal = (k*addFirst + (Math.max(0, S-k))*addRest);
+  ans = S*V - addedTotal;
+
+  sol.innerHTML = `
+    <h3>Вариация 2: найти начальный бэклог</h3>
+    <div class="muted">Формула: <span class="mono">B0 = S·V − (k·addFirst + (S−k)·addRest)</span></div>
+
+    <div class="mono">S=${ru0(S)}, V=${ruN(V)}, k=${k}, addFirst=${ruN(addFirst)}, addRest=${ruN(addRest)}</div>
+    <div class="mono">Добавлено всего = ${ru0(k)}·${ruN(addFirst)} + (${ru0(S)}−${ru0(k)})·${ruN(addRest)} = <b>${ruN(addedTotal)}</b></div>
+    <div class="mono">B0 = ${ruN(S*V)} − ${ruN(addedTotal)} = <b>${ruN(ans)}</b></div>
+  `;
+}
+
+    if (v === '3') {
+      const devs = Math.max(1, Math.floor(num('t4_devs3')));
+      const vdev = num('t4_vdev3');
+      const S = Math.max(1, Math.floor(num('t4_s3')));
+      const add = num('t4_add3');
+      const extra = num('t4_extra3');
+      const extraSprint = Math.max(1, Math.floor(num('t4_extra_sprint3')));
+
+      const closed = devs * vdev * S;
+      const added = add * S;
+      ans = closed - (added + extra);
+
+      sol.innerHTML = `
+        <h3>Вариация 3: найти начальный бэклог (devs + рефакторинг)</h3>
+        <div class="muted">Формула: <span class="mono">B0 + (add·S + extra) = (devs·vdev)·S</span> → <span class="mono">B0 = (devs·vdev·S) − (add·S + extra)</span></div>
+
+        <div class="mono">devs=${devs}, vdev=${ruN(vdev)}, S=${S}, add=${ruN(add)}, extra=${ruN(extra)} (на спринте ${extraSprint})</div>
+        <div class="mono">Закрыто всего = devs·vdev·S = ${devs}·${ruN(vdev)}·${S} = <b>${ruN(closed)}</b></div>
+        <div class="mono">Добавлено всего = add·S = ${ruN(add)}·${S} = <b>${ruN(added)}</b></div>
+        <div class="mono">B0 = ${ruN(closed)} − (${ruN(added)} + ${ruN(extra)}) = <b>${ruN(ans)}</b></div>
+      `;
+    }
+
+    if (v === '4') {
+      const B0 = num('t4_b04');
+      const devs = Math.max(1, Math.floor(num('t4_devs4')));
+      const vdev = num('t4_vdev4');
+      const addBase = num('t4_add_base4');
+      const addExtra = num('t4_add_extra4');
+      const k = Math.max(0, Math.floor(num('t4_k4')));
+
+      const denom = (devs*vdev - addBase);
+      const x = (B0 + k*addExtra) / denom;
+      ans = Math.ceil(x);
+
+      sol.innerHTML = `
+        <h3>Вариация 4: найти количество спринтов (первые k add больше)</h3>
+        <div class="muted">Упрощённо: <span class="mono">n = (B0 + k·addExtra)/(devs·vdev − addBase)</span>, ответ <span class="mono">ceil(n)</span></div>
+
+        <div class="mono">B0=${ruN(B0)}, devs=${devs}, vdev=${ruN(vdev)}, addBase=${ruN(addBase)}, addExtra=${ruN(addExtra)}, k=${k}</div>
+        <div class="mono">denom = devs·vdev − addBase = ${devs}·${ruN(vdev)} − ${ruN(addBase)} = <b>${ruN(denom)}</b></div>
+        <div class="mono">n = <b>${ruN(x)}</b> → ceil(n) = <b>${ru0(ans)}</b></div>
+        ${denom <= 0 ? `<div class="muted" style="margin-top:8px;"><b>Внимание:</b> denom ≤ 0 → задача теряет смысл.</div>` : ``}
+      `;
+    }
+
+    document.getElementById('t4_out').textContent = isFinite(ans) ? String(ans).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') : '—';
+  }
+
+  document.getElementById('t4_var').addEventListener('change', () => { applyT4UI(); calc4(); });
+  [
+  't4_b0','t4_vdev','t4_add','t4_k','t4_add_last',
+  't4_sprints','t4_vspr','t4_k_first','t4_add_first','t4_add_rest',
+    't4_devs3','t4_vdev3','t4_s3','t4_add3','t4_extra3','t4_extra_sprint3',
+    't4_b04','t4_devs4','t4_vdev4','t4_add_base4','t4_add_extra4','t4_k4'
+  ].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', calc4);
+  });
+
+  // ---------------- TASK 5 ----------------
+const yearPresets = {
+  '2023': { baseLimit: 1917000, stdIn: 30, stdOver: 15.1, itIn: 7.6, itOver: 0, vat: 20 },
+  '2024': { baseLimit: 2225000, stdIn: 30, stdOver: 15.1, itIn: 7.6, itOver: 0, vat: 20 },
+  '2025': { baseLimit: 2759000, stdIn: 30, stdOver: 15.1, itIn: 7.6, itOver: 0, vat: 20 },
+  '2026': { baseLimit: 2979000, stdIn: 30, stdOver: 15.1, itIn: 15.1, itOver: 7.6, vat: 22 } // НДС 22% в 2026
+};
+
+
+function applyT5Presets() {
+  const year = document.getElementById('t5_year').value;
+  const scheme = document.getElementById('t5_contrib_scheme').value;
+  const p = yearPresets[year] || yearPresets['2024'];
+
+  // НДС по году (2026 -> 22%)
+  if (p && typeof p.vat === 'number') {
+    document.getElementById('t5_vat').value = p.vat;
+  }
+
+  if (scheme === 'standard') {
+    document.getElementById('t5_base_limit').value = p.baseLimit;
+    document.getElementById('t5_rate_in').value = p.stdIn;
+    document.getElementById('t5_rate_over').value = p.stdOver;
+  }
+  if (scheme === 'it') {
+    document.getElementById('t5_base_limit').value = p.baseLimit;
+    document.getElementById('t5_rate_in').value = p.itIn;
+    document.getElementById('t5_rate_over').value = p.itOver;
+  }
+  // manual — ничего не трогаем
+}
+
+
+  function taxByProgressive(grossYTD, tiers) {
+    // tiers: [{limit, rate}] limit = верхняя граница (включительно), rate в долях
+    let tax = 0;
+    let prev = 0;
+    let left = grossYTD;
+    for (const t of tiers) {
+      const lim = t.limit;
+      const r = t.rate;
+      const band = Math.max(0, Math.min(left, lim - prev));
+      tax += band * r;
+      left -= band;
+      prev = lim;
+      if (left <= 0) break;
+    }
+    if (left > 0) {
+      // последняя ставка
+      const last = tiers[tiers.length - 1];
+      tax += left * last.rate;
+    }
+    return tax;
+  }
+
+  function grossFromNetProgressive(netAdd, grossYTD, tiers) {
+    // решаем: netAdd = g - (tax(grossYTD+g)-tax(grossYTD))
+    // бинарный поиск по g
+    const maxRate = Math.max(...tiers.map(t => t.rate));
+    let lo = netAdd;
+    let hi = netAdd / Math.max(1e-9, (1 - maxRate)) + 1; // запас
+    for (let i=0;i<120;i++) {
+      const mid = (lo+hi)/2;
+      const taxDelta = taxByProgressive(grossYTD + mid, tiers) - taxByProgressive(grossYTD, tiers);
+      const netMid = mid - taxDelta;
+      if (netMid >= netAdd) hi = mid; else lo = mid;
+    }
+    return (lo+hi)/2;
+  }
+
+  function calc5() {
+    const net = num('t5_net');
+    const already = num('t5_paid');
+    const paidType = document.getElementById('t5_paid_type').value;
+
+    const ndflMode = document.getElementById('t5_ndfl_mode').value;
+    const ndflFlatPct = num('t5_ndfl_flat');
+    const vatPct = num('t5_vat');
+
+    const baseLimit = num('t5_base_limit');
+    const rateInPct = num('t5_rate_in');
+    const rateOverPct = num('t5_rate_over');
+
+    // 1) определяем начисленную премию gross из net
+    // По умолчанию — как в доке: 13% и gross=net/0.87
+    let gross = 0;
+
+    // Для прогрессивного нужно знать "уже выплачено" как grossYTD
+    // Если "already" задан как net, конвертируем в gross исходя из текущей схемы (приближенно/корректно для flat, корректно для progressive через поиск).
+    let alreadyGross = 0;
+
+    // tiers (примерная шкала из переписки: 13% до 2.4m, 15% 2.4-5m, 18% 5-20m, 20% 20-50m, 22% >50m)
+    const tiers = [
+      { limit: 2400000, rate: 0.13 },
+      { limit: 5000000, rate: 0.15 },
+      { limit: 20000000, rate: 0.18 },
+      { limit: 50000000, rate: 0.20 },
+      { limit: Infinity, rate: 0.22 },
+    ];
+
+    const flatRate = (ndflMode === 'flat13') ? 0.13 : (Math.max(0, ndflFlatPct)/100);
+
+    if (ndflMode === 'progressive') {
+      if (paidType === 'gross') {
+        alreadyGross = already;
+      } else {
+        // already — это net; восстанавливаем gross через бинарный поиск при grossYTD=0 (приближение)
+        // (Если нужно точно для середины шкалы — лучше ввести already как gross)
+        alreadyGross = grossFromNetProgressive(already, 0, tiers);
+      }
+      gross = grossFromNetProgressive(net, alreadyGross, tiers);
+    } else {
+      // плоский НДФЛ
+      if (paidType === 'gross') {
+        alreadyGross = already;
+      } else {
+        alreadyGross = already / Math.max(1e-9, (1 - flatRate));
+      }
+      gross = net / Math.max(1e-9, (1 - flatRate));
+    }
+
+    // 2) взносы (общий потолок по базе)
+    const leftInBase = Math.max(0, baseLimit - alreadyGross);
+    const partIn = Math.min(gross, leftInBase);
+    const partOver = Math.max(0, gross - partIn);
+
+    const contribIn = partIn * (rateInPct/100);
+    const contribOver = partOver * (rateOverPct/100);
+    const contrib = contribIn + contribOver;
+
+    // 3) счет заказчику
+    const baseNoVat = gross + contrib;
+    const vat = baseNoVat * (vatPct/100);
+    const total = baseNoVat + vat;
+
+    document.getElementById('t5_out_gross').textContent = ru4(gross) + ' руб.';
+    document.getElementById('t5_out_contrib').textContent = ru4(contrib) + ' руб.';
+    document.getElementById('t5_out_base').textContent = ru4(baseNoVat) + ' руб.';
+    document.getElementById('t5_out_vat').textContent = ru4(vat) + ' руб.';
+    document.getElementById('t5_out_total').textContent = ru4(total) + ' руб.';
+
+    const sol = document.getElementById('t5_solution');
+
+    const ndflText = ndflMode === 'progressive'
+      ? `Прогрессивный НДФЛ: gross найден поиском по условию "net = gross − ΔНДФЛ", учитывая YTD`
+      : `Плоский НДФЛ: gross = net / (1 − ставка)`;
+
+    sol.innerHTML = `
+      <h3>Шаг 1. Перевод “на руки” → “начислено”</h3>
+      <div class="muted">${esc(ndflText)}</div>
+      <div class="mono">net = ${ru4(net)} → gross = <b>${ru4(gross)}</b></div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 2. Трактовка “уже выплачено”</h3>
+      <div class="muted">Для базы взносов используем “уже выплачено” в формате <b>gross</b>.</div>
+      <div class="mono">already (${paidType}) = ${ru4(already)} → alreadyGross = <b>${ru4(alreadyGross)}</b></div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 3. Разделение по предельной базе</h3>
+      <div class="mono">baseLimit = ${ru4(baseLimit)}</div>
+      <div class="mono">Остаток в базе = max(0, baseLimit − alreadyGross) = <b>${ru4(leftInBase)}</b></div>
+      <div class="mono">Часть премии в базе = min(gross, остаток) = <b>${ru4(partIn)}</b></div>
+      <div class="mono">Часть премии сверх базы = gross − часть_в_базе = <b>${ru4(partOver)}</b></div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 4. Взносы (без 0.2%)</h3>
+      <div class="mono">contribIn = ${ru4(partIn)} × ${ruN(rateInPct/100)} = <b>${ru4(contribIn)}</b></div>
+      <div class="mono">contribOver = ${ru4(partOver)} × ${ruN(rateOverPct/100)} = <b>${ru4(contribOver)}</b></div>
+      <div class="mono">взносы всего = <b>${ru4(contrib)}</b></div>
+
+      <div class="hr"></div>
+
+      <h3>Шаг 5. Счёт заказчику</h3>
+      <div class="muted">По умолчанию без округления (если в условии не сказано иначе).</div>
+      <div class="mono">baseNoVat = gross + contrib = ${ru4(gross)} + ${ru4(contrib)} = <b>${ru4(baseNoVat)}</b></div>
+      <div class="mono">НДС = baseNoVat × ${ruN(vatPct/100)} = <b>${ru4(vat)}</b></div>
+      <div class="mono">Итого = baseNoVat + НДС = <b>${ru4(total)}</b></div>
+    `;
+  }
+
+  document.getElementById('t5_year').addEventListener('change', () => { applyT5Presets(); calc5(); });
+  document.getElementById('t5_contrib_scheme').addEventListener('change', () => { applyT5Presets(); calc5(); });
+
+  ['t5_net','t5_paid','t5_paid_type','t5_ndfl_mode','t5_ndfl_flat','t5_vat','t5_base_limit','t5_rate_in','t5_rate_over']
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', calc5);
+    });
+
+  // init
+  applyT4UI();
+  applyT5Presets();
+  calc1(); calc2(); calc3(); calc4(); calc5();
+</script>
+
+</body>
+</html>
